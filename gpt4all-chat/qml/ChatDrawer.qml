@@ -83,9 +83,10 @@ Drawer {
                     height: chatName.height
                     opacity: 0.9
                     property bool isCurrent: LLM.chatListModel.currentChat === LLM.chatListModel.get(index)
+                    property bool isServer: LLM.chatListModel.get(index).isServer
                     property bool trashQuestionDisplayed: false
                     z: isCurrent ? 199 : 1
-                    color: index % 2 === 0 ? theme.backgroundLight : theme.backgroundLighter
+                    color: isServer && !LLM.serverEnabled ? theme.backgroundDarkest : (index % 2 === 0 ? theme.backgroundLight : theme.backgroundLighter)
                     border.width: isCurrent
                     border.color: chatName.readOnly ? theme.assistantColor : theme.userColor
                     TextField {
@@ -149,7 +150,7 @@ Drawer {
                             id: editButton
                             width: 30
                             height: 30
-                            visible: isCurrent
+                            visible: isCurrent && !isServer
                             opacity: trashQuestionDisplayed ? 0.5 : 1.0
                             background: Image {
                                 width: 30
@@ -166,10 +167,10 @@ Drawer {
                             Accessible.description: qsTr("Provides a button to edit the chat name")
                         }
                         Button {
-                            id: c
+                            id: trashButton
                             width: 30
                             height: 30
-                            visible: isCurrent
+                            visible: isCurrent && !isServer
                             background: Image {
                                 width: 30
                                 height: 30
@@ -182,6 +183,32 @@ Drawer {
                             Accessible.role: Accessible.Button
                             Accessible.name: qsTr("Delete of the chat")
                             Accessible.description: qsTr("Provides a button to delete the chat")
+                        }
+                        Button {
+                            id: serverToggle
+                            width: 40
+                            height: 40
+                            visible: isServer
+                            background: Image {
+                                anchors.centerIn: parent
+                                width: 30
+                                height: 30
+                                source: "qrc:/gpt4all/icons/network.svg"
+                            }
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "transparent"
+                                visible: LLM.serverEnabled
+                                border.color: theme.backgroundLightest
+                                border.width: 2
+                                radius: 5
+                            }
+                            onClicked: {
+                                LLM.serverEnabled = !LLM.serverEnabled;
+                            }
+                            Accessible.role: Accessible.Button
+                            Accessible.name: qsTr("Server chat toggle")
+                            Accessible.description: qsTr("Provides a button to toggle the server")
                         }
                     }
                     Rectangle {

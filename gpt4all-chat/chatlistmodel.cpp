@@ -243,4 +243,6 @@ void ChatListModel::chatsRestoredFinished()
 
     if (m_chats.isEmpty())
         addChat();
+
+    addServerChat();
 }

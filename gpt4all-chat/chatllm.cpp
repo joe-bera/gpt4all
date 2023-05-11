@@ -41,6 +41,7 @@ ChatLLM::ChatLLM(Chat *parent)
     : QObject{nullptr}
     , m_llmodel(nullptr)
     , m_promptResponseTokens(0)
+    , m_promptTokens(0)
     , m_responseLogits(0)
     , m_isRecalc(false)
     , m_chat(parent)
@@ -49,6 +50,7 @@ ChatLLM::ChatLLM(Chat *parent)
     connect(this, &ChatLLM::sendStartup, Network::globalInstance(), &Network::sendStartup);
     connect(this, &ChatLLM::sendModelLoaded, Network::globalInstance(), &Network::sendModelLoaded);
     connect(m_chat, &Chat::idChanged, this, &ChatLLM::handleChatIdChanged);
+    connect(&m_llmThread, &QThread::started, this, &ChatLLM::threadStarted);
     m_llmThread.setObjectName(m_chat->id());
     m_llmThread.start();
 }
@@ -89,7 +91,7 @@ bool ChatLLM::loadModel(const QString &modelName)
         return true;
 
     if (isModelLoaded()) {
-        resetContextPrivate();
+        resetContextProtected();
         delete m_llmodel;
         m_llmodel = nullptr;
         emit isModelLoadedChanged();
@@ -161,6 +163,7 @@ void ChatLLM::regenerateResponse()
     m_ctx.logits.erase(m_ctx.logits.end() -= m_responseLogits, m_ctx.logits.end());
     m_ctx.tokens.erase(m_ctx.tokens.end() -= m_promptResponseTokens, m_ctx.tokens.end());
     m_promptResponseTokens = 0;
+    m_promptTokens = 0;
     m_responseLogits = 0;
     m_response = std::string();
     emit responseChanged();
@@ -168,6 +171,7 @@ void ChatLLM::regenerateResponse()
 
 void ChatLLM::resetResponse()
 {
+    m_promptTokens = 0;
     m_promptResponseTokens = 0;
     m_responseLogits = 0;
     m_response = std::string();
@@ -176,11 +180,11 @@ void ChatLLM::resetResponse()
 
 void ChatLLM::resetContext()
 {
-    resetContextPrivate();
+    resetContextProtected();
     emit sendResetContext();
 }
 
-void ChatLLM::resetContextPrivate()
+void ChatLLM::resetContextProtected()
 {
     regenerateResponse();
     m_ctx = LLModel::PromptContext();
@@ -235,6 +239,7 @@ bool ChatLLM::handlePrompt(int32_t token)
 #if defined(DEBUG)
     qDebug() << "chatllm prompt process" << m_chat->id() << token;
 #endif
+    ++m_promptTokens;
     ++m_promptResponseTokens;
     return !m_stopGenerating;
 }

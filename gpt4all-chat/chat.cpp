@@ -11,6 +11,20 @@ Chat::Chat(QObject *parent)
     , m_responseInProgress(false)
     , m_creationDate(QDateTime::currentSecsSinceEpoch())
     , m_llmodel(new ChatLLM(this))
+    , m_isServer(false)
+{
+    connectLLM();
+}
+
+Chat::Chat(bool isServer, QObject *parent)
+    : QObject(parent)
+    , m_id(Network::globalInstance()->generateUniqueId())
+    , m_name(tr("Server Chat"))
+    , m_chatModel(new ChatModel(this))
+    , m_responseInProgress(false)
+    , m_creationDate(QDateTime::currentSecsSinceEpoch())
+    , m_llmodel(new Server(this))
+    , m_isServer(true)
 {
     connectLLM();
 }
@@ -141,6 +155,12 @@ void Chat::newPromptResponsePair(const QString &prompt)
     m_chatModel->appendPrompt(tr("Prompt: "), prompt);
     m_chatModel->appendResponse(tr("Response: "), prompt);
     emit resetResponseRequested(); // blocking queued connection
+}
+
+void Chat::serverNewPromptResponsePair(const QString &prompt)
+{
+    m_chatModel->appendPrompt(tr("Prompt: "), prompt);
+    m_chatModel->appendResponse(tr("Response: "), prompt);
 }
 
 bool Chat::isRecalc() const

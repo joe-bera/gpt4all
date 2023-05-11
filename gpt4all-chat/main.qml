@@ -757,7 +757,7 @@ Window {
         }
 
         Button {
-            visible: chatModel.count
+            visible: chatModel.count && !currentChat.isServer
             Image {
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left
@@ -825,7 +825,7 @@ Window {
                 color: theme.textColor
                 padding: 20
                 rightPadding: 40
-                enabled: currentChat.isModelLoaded
+                enabled: currentChat.isModelLoaded && !currentChat.isServer
                 wrapMode: Text.WordWrap
                 font.pixelSize: theme.fontSizeLarge
                 placeholderText: qsTr("Send a message...")
